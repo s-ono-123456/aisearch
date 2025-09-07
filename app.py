@@ -9,6 +9,7 @@ import base64
 import filetype
 from langchain_core.output_parsers import StrOutputParser
 from prompt import create_prompt_with_images
+from markdown_utils import split_by_image_links, extract_image_links
 
 load_dotenv()
 # Azure AI Searchの設定（必要に応じて値を変更してください）
@@ -64,14 +65,15 @@ if st.button("送信") and user_input:
             content = result.page_content
             with tabs[1]:
                 st.markdown(f"### {title}")
-                parts_content = re.split(r'(!\[.*?\]\(.*?\))', content)
+                # 画像リンク単位で分割（画像リンクは単独の要素として保持される）
+                parts_content = split_by_image_links(content)
                 for part in parts_content:
                     # プロンプトに追加
                     references += part + "\n"
                     if re.match(r'!\[.*?\]\(.*?\)', part):
-                        # 画像リンクの部分
-                        img_filename = re.findall(r'!\[.*?\]\((.*?)\)', part)[0]
-                        if img_filename in imagedict:
+                        # 画像リンクの部分: 丸かっこ内を抽出
+                        img_filename = extract_image_links(part)[0] if extract_image_links(part) else None
+                        if img_filename and img_filename in imagedict:
                             print(f"Downloading image: {img_filename}")
                             blob_url = imagedict[img_filename]
                             print(f"Blob URL: {blob_url}")
@@ -108,20 +110,16 @@ if st.button("送信") and user_input:
         )
 
         result = rag_chain.invoke({"question": user_input, "references": references})
-        print(f"RAG Result: {result}")
 
         with tabs[0]:
 
-            parts_result = re.split(r'(!\[.*?\]\(.*?\))', result)
-            print(f"Parts Result: {parts_result}")
+            parts_result = split_by_image_links(result)
             for part in parts_result:
                 if re.match(r'!\[.*?\]\(.*?\)', part):
-                    # 画像リンクの部分
-                    img_filename = re.findall(r'!\[.*?\]\((.*?)\)', part)[0]
-                    if img_filename in imagedict_all:
-                        print(f"Downloading image: {img_filename}")
+                    # 画像リンクの部分: 丸かっこ内を抽出
+                    img_filename = extract_image_links(part)[0] if extract_image_links(part) else None
+                    if img_filename and img_filename in imagedict_all:
                         blob_url = imagedict_all[img_filename]
-                        print(f"Blob URL: {blob_url}")
                         # Blob Storageから画像をダウンロード
                         img = download_file_from_blob_storage_via_restapi(blob_url, save_path=None)
                         st.image(img, caption=img_filename)
