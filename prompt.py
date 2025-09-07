@@ -1,5 +1,13 @@
 from langchain_core.prompts.chat import HumanMessagePromptTemplate
 from langchain_core.prompts import ChatPromptTemplate
+import logging
+from logging_config import configure_logging
+
+
+# ロギング初期化
+configure_logging()
+logger = logging.getLogger(__name__)
+
 
 system_prompt = "あなたは設計書の内容を読み取り回答する優秀なAIです。質問に対して丁寧に回答してください。"
 human_prompt = """
@@ -13,12 +21,13 @@ human_prompt = """
 {references}
 """
 
+
 def create_prompt_with_images(image_templates):
 
     list_prompt = [human_prompt]
-    print(f"List Prompt before extending: {len(list_prompt)}")
+    logger.debug("List Prompt before extending: %d", len(list_prompt))
     list_prompt.extend(image_templates)
-    print(f"List Prompt after extending: {len(list_prompt)}")
+    logger.debug("List Prompt after extending: %d", len(list_prompt))
     human_message_template = HumanMessagePromptTemplate.from_template(list_prompt)
     prompt = ChatPromptTemplate.from_messages([("system", system_prompt), human_message_template])
     return prompt

@@ -3,6 +3,13 @@ import requests
 import mimetypes  # Content-Type自動判定用
 from dotenv import load_dotenv
 import os
+import logging
+from logging_config import configure_logging
+
+
+# ロギング初期化
+configure_logging()
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 
@@ -47,10 +54,9 @@ def upload_image_to_blob_storage_via_restapi(blob_path, image_path):
     response = requests.put(upload_url, headers=headers, data=image_data)
     # ステータスコードで結果を判定
     if response.status_code == 201:
-        # print("アップロード成功:", upload_url)
-        pass
+        logger.info("アップロード成功: %s", upload_url)
     else:
-        print("アップロード失敗:", response.status_code, response.text)
+        logger.error("アップロード失敗: %s %s", response.status_code, response.text)
     return response
 
 # 指定パスのファイルをAzure Blob Storageからダウンロードする関数
@@ -73,8 +79,8 @@ def download_file_from_blob_storage_via_restapi(blob_path, save_path=None):
             os.makedirs(os.path.dirname(static_save_path), exist_ok=True)
             with open(static_save_path, "wb") as f:
                 f.write(file_data)
-        # print("ダウンロード成功:", download_url)
+        logger.info("ダウンロード成功: %s", download_url)
         return file_data
     else:
-        print("ダウンロード失敗:", response.status_code, response.text)
+        logger.error("ダウンロード失敗: %s %s", response.status_code, response.text)
         return None

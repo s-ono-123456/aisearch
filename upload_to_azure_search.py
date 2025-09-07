@@ -7,6 +7,14 @@ from langchain_openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from blobstorage import upload_image_to_blob_storage_via_restapi
 from azureaisearch import upload_to_azure_search
+import logging
+from logging_config import configure_logging
+
+
+# ロギングを初期化（既に設定済みなら再設定しない）
+configure_logging()
+logger = logging.getLogger(__name__)
+
 
 # .envファイルから環境変数を読み込む
 load_dotenv()
@@ -50,7 +58,7 @@ def main():
             markdown_text = f.read()
 
         mdfilename = os.path.basename(md_path)
-        print("タイトル:", mdfilename)
+        logger.info("タイトル: %s", mdfilename)
 
         # LangChainのRecursiveCharacterTextSplitterでMarkdownを分割
         chunks = split_markdown_by_recursive_splitter(markdown_text)
@@ -80,7 +88,7 @@ def main():
                     imagebloburls.append(blob_path)
                     image_filenames.append(image_link)
                 else:
-                    print(f"画像アップロード失敗: {image_filename}")
+                    logger.error("画像アップロード失敗: %s", image_filename)
 
             doc = {
                 "text": text,

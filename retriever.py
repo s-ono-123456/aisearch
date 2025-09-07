@@ -4,10 +4,18 @@ from typing import List, Optional
 import requests
 import json
 from langchain_openai import OpenAIEmbeddings
+import logging
+from logging_config import configure_logging
+
+
+configure_logging()
+logger = logging.getLogger(__name__)
+
 
 embeddings = OpenAIEmbeddings(
     model="text-embedding-3-large"
 )
+
 
 class AzureAISearchRetriever(BaseRetriever):
     """
@@ -64,12 +72,12 @@ class AzureAISearchRetriever(BaseRetriever):
                 return documents
             except Exception as e:
                 # JSON解析エラーの場合
-                print(f"JSON解析エラー: {e}")
-                print("レスポンス内容:", response.text)
+                logger.exception("JSON解析エラー: %s", e)
+                logger.debug("レスポンス内容: %s", response.text)
         else:
             # リクエスト失敗の場合
-            print(f"リクエスト失敗: ステータスコード {response.status_code}")
-            print("レスポンス内容:", response.text)
+            logger.error("リクエスト失敗: ステータスコード %s", response.status_code)
+            logger.debug("レスポンス内容: %s", response.text)
 
 
 
@@ -95,6 +103,6 @@ if __name__ == "__main__":
     results = retriever.invoke(query)
 
     for doc in results:
-        print("Content:", doc.page_content)
-        print("Metadata:", doc.metadata)
-        print("-----")
+        logger.info("Content: %s", doc.page_content)
+        logger.info("Metadata: %s", doc.metadata)
+        logger.info("-----")

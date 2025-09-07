@@ -3,3 +3,4 @@
 markdown/
 __pycache__/
 static/image/
+log/*.log

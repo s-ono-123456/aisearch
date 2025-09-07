@@ -2,6 +2,12 @@ import requests
 import os
 from dotenv import load_dotenv
 import re
+import logging
+from logging_config import configure_logging
+
+# ロギングを初期化（既に設定済みなら再設定しない）
+configure_logging()
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 AZURE_SEARCH_ENDPOINT = os.getenv("AZURE_SEARCH_ENDPOINT")
@@ -37,9 +43,9 @@ def upload_to_azure_search(docs):
                 delete_docs = [{"@search.action": "delete", "id": id} for id in delete_ids]
                 delete_data = {"value": delete_docs}
                 delete_resp = requests.post(url, headers=headers, json=delete_data)
-                print(f"削除レスポンス: {delete_resp.status_code} {delete_resp.text}")
+                logger.info(f"削除レスポンス: {delete_resp.status_code} {delete_resp.text}")
         else:
-            print(f"検索API失敗: {search_resp.status_code} {search_resp.text}")
+            logger.error(f"検索API失敗: {search_resp.status_code} {search_resp.text}")
 
     # --- 通常のアップロード処理 ---
     # parent_filenameからidに使えない文字（英字・数字・_・-・=以外）を_に置換する
@@ -60,4 +66,4 @@ def upload_to_azure_search(docs):
         })
     data = {"value": list_docs}
     resp = requests.post(url, headers=headers, json=data)
-    print("Azure Searchレスポンス:", resp.status_code, resp.text)
+    logger.info(f"Azure Searchレスポンス: {resp.status_code} {resp.text}")
