@@ -81,7 +81,7 @@ def download_image_and_prepare_template(img_filename, blob_url):
     return img, image_template
 
 
-def streamlit_safe_image(image_data, caption=None, use_column_width=False):
+def streamlit_safe_image(image_data, caption=None):
     """
     Streamlit に安全に画像を渡すユーティリティ。
 
@@ -99,7 +99,7 @@ def streamlit_safe_image(image_data, caption=None, use_column_width=False):
                 pil_img = Image.open(BytesIO(image_data))
             except Exception:
                 # PIL で開けない場合は、streamlit に bytes を直接渡してみる
-                st.image(image_data, caption=caption, use_column_width=use_column_width)
+                st.image(image_data, caption=caption)
                 return
 
             # PIL で開けた場合はフォーマットが None でも問題なく表示するために
@@ -184,7 +184,7 @@ def generate_answer(user_input, references, image_templates, llm):
     """プロンプトを作成して LLM に問い合わせ、結果を返す。"""
     prompt = create_prompt_with_images(image_templates)
 
-    # パイプラインを組み立てる（元と同じ挙動を保つ）
+    # パイプラインを組み立てる
     rag_chain = (
         prompt
         | llm
