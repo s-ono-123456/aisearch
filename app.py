@@ -7,9 +7,8 @@ from blobstorage import download_file_from_blob_storage_via_restapi
 from langchain_openai import ChatOpenAI
 import base64
 import filetype
-from langchain_core.prompts.chat import HumanMessagePromptTemplate
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
+from prompt import create_prompt_with_images
 
 load_dotenv()
 # Azure AI Searchの設定（必要に応じて値を変更してください）
@@ -48,17 +47,9 @@ if st.button("送信") and user_input:
         st.subheader("AIの回答")
     with tabs[1]:
         st.subheader("参考情報")
-    system_prompt = "あなたは設計書の内容を読み取り回答する優秀なAIです。質問に対して丁寧に回答してください。"
-    human_prompt = """
-    以下の参考情報をもとに、ユーザーの質問に対して簡潔に回答してください。
-    また、画像のリンクが含まれている場合は画像を添付しますので、画像も参照して回答してください。
-    {question}
-
-    参考情報:
-    {references}
-    """
 
     references = ""
+    imagedict_all = {}
     if results:
         # 検索結果から参考情報を抽出
         image_templates = []
@@ -67,13 +58,12 @@ if st.button("送信") and user_input:
             image_filenames = result.metadata["image_filenames"]
             imagebloburls = result.metadata["imagebloburls"]
             imagedict = dict(zip(image_filenames, imagebloburls))
+            imagedict_all.update(imagedict)
             print(imagedict)
 
             content = result.page_content
             with tabs[1]:
                 st.markdown(f"### {title}")
-                imagebloburls = result.metadata["imagebloburls"]
-                image_filenames = result.metadata["image_filenames"]
                 parts_content = re.split(r'(!\[.*?\]\(.*?\))', content)
                 for part in parts_content:
                     # プロンプトに追加
@@ -106,13 +96,10 @@ if st.button("送信") and user_input:
                     else:
                         # テキストの部分
                         st.markdown(part)
-        list_prompt = [human_prompt]
-        print(f"List Prompt before extending: {len(list_prompt)}")
-        list_prompt.extend(image_templates)
-        print(f"List Prompt after extending: {len(list_prompt)}")
-        human_message_template = HumanMessagePromptTemplate.from_template(list_prompt)
-        prompt = ChatPromptTemplate.from_messages([("system", system_prompt), human_message_template])
-
+        
+        
+        
+        prompt = create_prompt_with_images(image_templates)
 
         rag_chain = (
             prompt
@@ -121,10 +108,30 @@ if st.button("送信") and user_input:
         )
 
         result = rag_chain.invoke({"question": user_input, "references": references})
+        print(f"RAG Result: {result}")
+
         with tabs[0]:
-            st.markdown(result)
+
+            parts_result = re.split(r'(!\[.*?\]\(.*?\))', result)
+            print(f"Parts Result: {parts_result}")
+            for part in parts_result:
+                if re.match(r'!\[.*?\]\(.*?\)', part):
+                    # 画像リンクの部分
+                    img_filename = re.findall(r'!\[.*?\]\((.*?)\)', part)[0]
+                    if img_filename in imagedict_all:
+                        print(f"Downloading image: {img_filename}")
+                        blob_url = imagedict_all[img_filename]
+                        print(f"Blob URL: {blob_url}")
+                        # Blob Storageから画像をダウンロード
+                        img = download_file_from_blob_storage_via_restapi(blob_url, save_path=None)
+                        st.image(img, caption=img_filename)
+                else:
+                    # テキストの部分
+                    st.markdown(part)
+
     else:
         with tabs[0]:
             st.markdown("参考になる情報が見つかりませんでした。")   
         with tabs[1]:
-            st.markdown("参考になる情報が見つかりませんでした。")    
+            st.markdown("参考になる情報が見つかりませんでした。")
+
