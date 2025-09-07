@@ -7,15 +7,10 @@ from langchain_openai import OpenAIEmbeddings
 import logging
 from logging_config import configure_logging
 
-
 configure_logging()
 logger = logging.getLogger(__name__)
 
-
-embeddings = OpenAIEmbeddings(
-    model="text-embedding-3-large"
-)
-
+embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
 
 class AzureAISearchRetriever(BaseRetriever):
     """
