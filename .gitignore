@@ -1,0 +1,5 @@
+.env
+.venv/
+markdown/
+__pycache__/
+static/image/
