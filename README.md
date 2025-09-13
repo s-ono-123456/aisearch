@@ -84,6 +84,30 @@ streamlit run .\app.py --server.enableStaticServing=true
 - `retriever.py` は Azure Search からクエリを発行し、結果を整形して返すユーティリティです。Streamlit 側 (`app.py`) はこれを利用して検索結果を表示します。
 - `upload_to_azure_search.py` を実行する前に、`markdown_utils.py` などのパーサーが期待するファイル形式でコンテンツを配置してください。
 
+
+## REST CLIENTの環境変数
+以下を VSCode の設定に追加すると、`.http` ファイルで環境変数を利用できます。
+```json
+    "rest-client.environmentVariables": {
+        "$shared": {
+            "test": "foo",
+            "aaaaa": "bar"
+        },
+        "dev": {
+            "search-api-key": "api-key",
+            "model-api-key": "API=KEY",
+            "model-provider-url": "https://<your-custom-endpoint>.azure.com/",
+            "search-url": "https://<your-custom-endpoint>.search.windows.net",
+        },
+        "stg": {
+            "search-api-key": "api-key",
+            "model-api-key": "API=KEY",
+            "model-provider-url": "https://<your-custom-endpoint>.azure.com/",
+            "search-url": "https://<your-custom-endpoint>.search.windows.net",
+        },
+    },
+```
+
 ## 次のステップ（提案）
 
 - エラーハンドリングやリトライの追加（大規模アップロード向け）

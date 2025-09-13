@@ -1,0 +1,84 @@
+### Variables
+# https://learn.microsoft.com/ja-jp/azure/search/search-agentic-retrieval-how-to-create
+
+# Knowledge source name
+@ks-name=sample-ks
+# Agent name
+@agent-name=test-agent
+# Search index name
+@index-name=sample_index
+
+### List knowledge sources by name and type
+GET {{search-url}}/knowledgeSources?api-version=2025-08-01-preview&$select=name,kind
+api-key: {{search-api-key}}
+Content-Type: application/json
+
+### Get a knowledge source definition
+GET {{search-url}}/knowledgeSources/{{ks-name}}?api-version=2025-08-01-preview
+api-key: {{search-api-key}}
+Content-Type: application/json
+
+### Create Knowledge Sources
+POST {{search-url}}/knowledgeSources?api-version=2025-08-01-preview
+api-key: {{search-api-key}}
+Content-Type: application/json
+
+{
+    "name" : "{{ks-name}}",
+    "kind" : "searchIndex",
+    "description" : "Earth at night e-book knowledge source",
+    "searchIndexParameters" :{
+      "searchIndexName" : "{{index-name}}",
+      "sourceDataSelect" : "page_chunk,page_number"
+    }
+}
+
+### Create knowledge agent
+PUT {{search-url}}/agents/{{agent-name}}?api-version=2025-08-01-preview
+Content-Type: application/json
+api-key: {{search-api-key}}
+
+{
+    "name" : "{{agent-name}}",
+    "description": "This knowledge agent handles questions directed at two unrelated sample indexes.",
+    "retrievalInstructions": "Use the hotels knowledge source only for queries about hotels or where to stay, otherwise use the earth at night knowledge source.",
+    "knowledgeSources": [
+        {
+            "name": "earth-at-night-blob-ks",
+            "alwaysQuerySource": false,
+            "includeReferences": true,
+            "includeReferenceSourceData": true,
+            "maxSubQueries": 30,
+            "rerankerThreshold": null
+        },
+        {
+            "name": "hotels-index-ks",
+            "alwaysQuerySource": false,
+            "includeReferences": true,
+            "includeReferenceSourceData": true,
+            "maxSubQueries": 5,
+            "rerankerThreshold": null
+        }
+    ],
+    "models" : [ 
+        {
+            "kind": "azureOpenAI",
+            "azureOpenAIParameters": {
+                "resourceUri": "{{model-provider-url}}",
+                "apiKey": "{{model-api-key}}",
+                "deploymentId": "gpt-4o-mini",
+                "modelName": "gpt-4o-mini"
+            }
+        }
+    ],
+    "outputConfiguration": {
+        "modality": "extractiveData",
+        "answerInstructions": "Provide a concise answer to the question.",
+        "attemptFastPath": false,
+        "includeActivity": true
+    },
+    "requestLimits": {
+        "maxOutputSize": 5000,
+        "maxRuntimeInSeconds": 60
+    }
+}
